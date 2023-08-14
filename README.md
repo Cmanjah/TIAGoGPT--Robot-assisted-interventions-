@@ -1,13 +1,6 @@
-RELEASE v0.1 - Milestone within the 1st Month June - July 2023
+RELEASE v0.1.10-beta
 
 Topic: Exploring the Potential of Tiago Robot-Assisted Interventions for Supporting Children in Need 
-
-Name: Charles Anjah 
-UB No: 22002066 
-
-Module: Dissertation
-
-Supervisor: Dr. Amr Rashad Ahmed Abdullatif
 
 Date: July 2023
 
@@ -15,7 +8,7 @@ Project Aim
 The aim of exploring the potential of Tiago robot-assisted interventions for supporting children in need project is to validate the potential of the Tiago robot in developing and implementing a robot-assisted intervention system that utilises voice transcription, generative text response, and text synthesis capabilities to assist children with social skill difficulties, such as autism spectrum disorder (ASD). By integrating voice transcription technology, a large language model (LLM) such as the generative pretrained transformer (GPT), and voice synthesis capabilities, the project aims to create a reliable and personalised response generator within the Tiago robot.
 
 Project Objectives
-The project specific objectives are:
+The project-specific objectives are:
 1.	To develop a robust and reliable voice transcription module that accurately converts spoken prompt into text format using the Whisper large-v2 model API from OpenAI.
 2.	To implement a response generation module utilising the generative pretrained transformer model (GPT-3.5-turbo) API to generate appropriate and contextually relevant responses based on the transcribed input.
 3.	To integrate the Google Text-to-Speech API to synthesise the generated responses into natural-sounding speech.
@@ -33,14 +26,14 @@ CURRENT SYSTEM FEATURES/ MODULES IMPLEMENTED
 7. Consent handling and managing Module
 8. Storage management Module
 
-RELEASE v0.1.10
+RELEASE v0.1.10-beta
 1. Updated menu list
 2. Bug fixed in the dual conversion mode switching
 3. Package requirement listed
 4. Bug with voice mode recording fixed. Each voice input now requires clicking the start button to commence recording.
 
 EXPECTED UPDATE
-RELEASE v0.1 - Milestone for the 2nd Month July - August 2023
+RELEASE v0.1.11 - Milestone for the 2nd Month July - August 2023
 
 From the Initial system design and the flowchart, we have the following section left:
 
