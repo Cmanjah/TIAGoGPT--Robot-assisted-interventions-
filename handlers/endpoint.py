@@ -17,13 +17,46 @@ class ModelGPT:
         self.openai.api_key = api_key
         self.messages = []
         # self.text_synthesis = Synthesizer()
+        self.max_token_length = 4096
+  
+        self.user_name = ""  # Initialize the user name to an empty string
+   
+    def getUsername(self):
+        return self.user_name
+    
+    def setUsername(self, name):
+        self.user_name = name
 
-    def sendRequest(self, prompt, max_tokens=100, temperature=1.0):  # max_tokens reduced from 1000 to 100
+    def greetResponse(self, mode='text'):
+        if self.user_name:
+            if mode == 'voice':
+                greeting = f"Hello {self.user_name}, welcome to the voice-based interactive session!" +\
+                            " It will be beneficial. Let's get started. So, what do you want to know?"
+            else:
+                greeting = f"Hello {self.user_name}, welcome to the text-based interactive session! So, ask me any question"            
+                
+        else:
+            greeting = "Hello, welcome to the text-based interactive session! So, ask me any question"            
+        return {'usage': 0, 'content': greeting}
+  
+
+    def generateResponse(self, prompt, max_tokens=100, temperature=1.0):  # max_tokens reduced from 1000 to 100
+        self.messages = [
+            {
+                "role":"system", 
+                "content":"You are an excellent research  Tiago robot, named TiagoGPT, developed as MSc Dessertation, dated August 2023 at the University of Bradford. " + \
+                "You are embodied in a Tiago robot, which assists children with social skill difficulties, specifically interaction skills. " + \
+                "Please keep conversations with the user by responding with short English phrases. " + \
+                "The response can be composed of several sentences, but every sentence " + \
+                "should be definitely short and less than 12 words.\n" + \
+                "Answer in English in any situation.\n" 
+            }
+            
+            ]
         try:
             self.messages.append({'role': 'user', 'content': prompt})
             response = self.openai.ChatCompletion.create(
                 model='gpt-3.5-turbo',
-                # model = "text-davinci-003",
                 max_tokens=max_tokens,
                 temperature=temperature,
                 messages=self.messages
@@ -58,6 +91,30 @@ class ChatAI:
             )
             self.prompt.append({'role': 'assistant', 'content': response})
             return {'usage': response.usage.total_tokens, 'content': response}
+        except Exception as e:
+            return {'error': e}
+
+
+
+# 1. Extract keywords from text
+class KeywordAI:
+    def __init__(self, api_key ):
+        self.openai = openai
+        self.openai.api_key = api_key
+        # self.prompt = []
+    
+    def keywordExtractByAI(self, message, temperature=0.5, max_token=60):
+        try:
+            response = openai.Completion.create(
+                model="text-davinci-003",
+                prompt=message,
+                temperature=temperature,
+                max_tokens=max_token, # Keep max token low
+                top_p=1.0,
+                frequency_penalty=0.8,
+                presence_penalty=0.0
+            )
+            return response
         except Exception as e:
             return {'error': e}
 
@@ -131,3 +188,11 @@ class Synthesizer:
         # Play the recently saved audio content
         self.autoplay(self.audio_manager.recent_file_finder())
         
+
+# syn = Synthesizer()
+# syn.synthesizeText("Hello, this is Charles Anjah! How can I help you today?")
+
+keyword = KeywordAI()
+prompt = 'I am an AI language model developed by OpenAI, and I am here to assist and provide information to the best of my abilities. My purpose is to help answer questions, engage in conversations, and assist users with various tasks.'
+# result = keyword.keywordExtractByAI(prompt)
+# print(result)

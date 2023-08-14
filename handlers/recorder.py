@@ -111,8 +111,18 @@ class AudioRecorder:
 
      
     def stopRecording(self):
-        self.is_recording = False
-        self.frames = []
+        try:
+            self.frames = []
+            if self.is_recording == True:
+                self.is_recording = False
+            if not self.stream.is_stopped:
+                self.stream.stop_stream()
+                self.stream.close()
+            if self.audio.open:
+                self.audio.terminate()
+        except:
+            print("There's error in stopping the audio")
+
         
     def pauseRecording(self):
         self.is_recording = False
