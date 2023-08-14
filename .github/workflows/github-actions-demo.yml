@@ -1,5 +1,5 @@
 name: GitHub Actions Demo
-run-name: ${{ github.actor }} is performing CI using GitHub Actions 🚀
+run-name: CI performed using by GitHub Actions ${{ github.actor }} 🚀
 on: [push]
 jobs:
   Explore-GitHub-Actions:
