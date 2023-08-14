@@ -1,12 +1,5 @@
 # Exploring the Potential of LLMs in Tiago Robot-Assisted Interventions for Supporting Children with Social Skill Difficulties 
 
-Name: Charles Anjah 
-UB No: 22002066 
-
-Module: Dissertation
-
-Supervisor: Dr. Amr Rashad Ahmed Abdullatif
-
 Date: July 2023
 
 ## Project Aim
