@@ -1,5 +1,13 @@
 import os
 import openai
+import nltk
+
+nltk.download('punkt')  # Run this once to download the tokenizer data
+
+def keyword_filter(text, keywords):
+    tokens = nltk.word_tokenize(text.lower())
+    return any(keyword.lower() in tokens for keyword in keywords)
+
 
 def filter(prompt):
     # for now, let's return prompt
@@ -40,7 +48,7 @@ def chat(prompt):
                 
     # Display consent form for authorization or decline.
     
-chat('HEY')
+# chat('HEY')
 
 # 1. Extract Keywords
 # 2. Check if the word matches with the selected words.

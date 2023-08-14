@@ -33,6 +33,12 @@ CURRENT SYSTEM FEATURES/ MODULES IMPLEMENTED
 7. Consent handling and managing Module
 8. Storage management Module
 
+RELEASE v0.1.10
+1. Updated menu list
+2. Bug fixed in the dual conversion mode switching
+3. Package requirement listed
+4. Bug with voice mode recording fixed. Each voice input now requires clicking the start button to commence recording.
+
 EXPECTED UPDATE
 RELEASE v0.1 - Milestone for the 2nd Month July - August 2023
 
@@ -44,6 +50,9 @@ From the Initial system design and the flowchart, we have the following section 
 4. Package Requirement Listing
 
 HOW TO USE
-1. Edit the api_key.ini file with your openai api key
-2. Edit the googlecloud-tts-api.json file with your .json api obtained from GoogleCloud
-3. Run the app.py file
+1. Install with the packages in requirement.txt as shown below: 
+        (venv) $ python -m pip install -r requirements.txt
+        where venv is your python virtual environment
+2. Edit the api_key.ini file with your openai api key
+3. Edit the googlecloud-tts-api.json file with your .json api obtained from GoogleCloud
+4. Run the app.py file

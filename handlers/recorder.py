@@ -20,7 +20,7 @@ class AudioRecorder:
         self.stream = None
         self.is_recording = False
 
-    def start_recording(self):
+    def startRecording(self):
         self.frames = []
         silence_frames = []
         self.is_recording = True
@@ -110,11 +110,11 @@ class AudioRecorder:
             print("No frames with reduced energy.")
 
      
-    def stop_recording(self):
+    def stopRecording(self):
         self.is_recording = False
         self.frames = []
         
-    def pause_recording(self):
+    def pauseRecording(self):
         self.is_recording = False
 
 # Usage example

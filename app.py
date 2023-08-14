@@ -5,11 +5,11 @@ from configparser import ConfigParser
 # import markdown
 from PyQt6.QtWidgets import (QApplication, QWidget, QLabel, QPushButton, QSlider,
 							 QTabWidget, QTextEdit, QCheckBox, QLineEdit, QTextBrowser, QMenu, QMenuBar, QSplitter, 
-							 QToolButton, QStatusBar,
+							 QToolButton, QStatusBar, QFileDialog,
 							 QHBoxLayout, QVBoxLayout, QFormLayout, QSizePolicy)
 from PyQt6.QtCore import Qt, QSize, pyqtSignal, QEvent, QThread
-from PyQt6.QtGui import QIcon, QTextCursor, QShortcut, QKeySequence, QPixmap
-from handlers.endpoint import ModelGPT, Synthesizer, Transcriber, openai_api
+from PyQt6.QtGui import QIcon, QTextCursor, QShortcut, QKeySequence, QPixmap, QPainter, QPageSize, QTextDocument, QPdfWriter
+from handlers.endpoint import ModelGPT, Synthesizer, Transcriber, openaiAPI
 from handlers.db import RobotDatabase
 from handlers.manager import ChatManager, FileManager
 from handlers.recorder import AudioRecorder
@@ -44,35 +44,36 @@ class ModelGPTThread(QThread):
 		# make an api call to OpenAI ModelGPT model
 		max_tokens = self.ai_assistant.max_tokens.value()
 		temperature = float('{0:.2f}'.format(self.ai_assistant.temperature.value() / 100))
-		response = self.ai_assistant.modelgpt.send_request(text_string.strip(), max_tokens=max_tokens, temperature=temperature)
+		response = self.ai_assistant.modelgpt.sendRequest(text_string.strip(), max_tokens=max_tokens, temperature=temperature)
 		self.clear_input.emit()
 		self.response_received.emit(response)
 
 
-
-class TranscriberThread(QThread):
-	clear_input = pyqtSignal()
-	response_received = pyqtSignal(dict)	
+class AppThread(QThread):
+	clear_button_data = pyqtSignal()
+	data_received = pyqtSignal(dict)	
 
 	def __init__(self, parent):
 		super().__init__(parent)
 		self.ai_assistant = parent
 		
 	def run(self):
-		text_string = self.ai_assistant.message_input.toHtml()
+		# text_string = self.ai_assistant.message_input.toHtml()
+		# self.ai_assistant.btn_voice.setText('Listening...')
+		# self.ai_assistant.btn_voice.setEnabled(False)
+		# ## if self.message_input.:
+		# self.ai_assistant.message_input.hide()
+		# self.ai_assistant.btn_submit.hide()
+		# self.ai_assistant.btn_clear.hide()
+		# self.ai_assistant.btn_stop.show()
+		# self.ai_assistant.status.showMessage('Text Prompt field disabled!')
+		# 	# self.startListener()
 		# self.clear_input.emit()
+		pass
 		
-		# make an api call to OpenAI ModelGPT model
-		# max_tokens = self.ai_assistant.max_tokens.value()
-		# temperature = float('{0:.2f}'.format(self.ai_assistant.temperature.value() / 100))
-		# response = self.ai_assistant. modelgpt.send_request(text_string.strip(), max_tokens=max_tokens, temperature=temperature)
-		# self.clear_input.emit()
-		# self.response_received.emit(response)
-
-
 
 class AIAssistant(QWidget):
-	def __init__(self, parent=None):
+	def __init__(self, firstname, parent=None):
 		super().__init__()
 		self.modelgpt = ModelGPT(API_KEY)
 		self.t = ModelGPTThread(self)
@@ -80,21 +81,26 @@ class AIAssistant(QWidget):
 		# initialise the audio recorder
 		self.recorder = AudioRecorder()
 		# transcriber
-		self.transcript = Transcriber(API_KEY)
-		self.tc = TranscriberThread(self)
+		self.transcribe = Transcriber(API_KEY)
+		self.tc = AppThread(self)
   		# synthesizer
 		self.text_synthesis = Synthesizer()
- 
+
+		self.ai_firstname = firstname
+#		print('self.ai_firstname: ', self.ai_firstname)
 		self.layout = {}
 		self.layout['main'] = QVBoxLayout()
 		self.setLayout(self.layout['main'])
+		self.splitter = QSplitter(Qt.Orientation.Vertical)		
 
 		self.message_input = QTextEdit(placeholderText='Enter your prompt here')
 		# create buttons
-		self.btn_voice = QPushButton('&Start voice') #, clicked=self.start_listener)
-		self.btn_submit = QPushButton('&Submit text', clicked=self.post_message)
+		self.btn_vprompt = QPushButton('&Voice Prompt') #, clicked=self.voicePrompt)
+		self.btn_tprompt = QPushButton('&Text Prompt') #, clicked=self.textPrompt)
+		self.btn_voice = QPushButton('&Start voice', clicked=self.startListener)
+		self.btn_submit = QPushButton('&Submit text', clicked=self.postMessage)
 		self.btn_clear = QPushButton('&Clear', clicked=self.reset_input)
-		self.btn_stop = QPushButton('&Stop voice', clicked=self.stop_listener)
+		self.btn_stop = QPushButton('&Stop voice', clicked=self.stopListener)
 
 		self.init_ui()
 		self.init_set_default_settings()
@@ -107,9 +113,8 @@ class AIAssistant(QWidget):
 
   
 		# Newly added: Transcript
-		self.tc = TranscriberThread(self)
+		self.tc = AppThread(self)
 	
-
 	def init_ui(self):
 		# add sub layout manager
 		self.layout['inputs'] = QFormLayout()
@@ -137,54 +142,91 @@ class AIAssistant(QWidget):
 		self.layout['slider_layout2'] = QHBoxLayout()
 		self.layout['slider_layout2'].addWidget(self.temperature_value)
 		self.layout['slider_layout2'].addWidget(self.temperature)
+		# self.layout['inputs'].addRow(QLabel('Token Limit:'), self.layout['slider_layout'])
 		self.layout['inputs'].addRow(self.layout['slider_layout2'])
 		self.layout['main'].addLayout(self.layout['inputs'])
 
 		self.max_token_value.hide()
 		self.temperature_value.hide()
   
-		splitter = QSplitter(Qt.Orientation.Vertical)		
-		self.layout['main'].addWidget(splitter)
+		self.layout['main'].addWidget(self.splitter)
 
 
 		# conversation window
 		self.conversation_window = QTextBrowser(openExternalLinks=True)
 		self.conversation_window.setReadOnly(True)
-		# self.conversation_window.setStyleSheet('background-color:#1d2b3a; color: white')
-		# self.conversation_window.set
-		splitter.addWidget(self.conversation_window) 
+		self.splitter.addWidget(self.conversation_window) 
 
 		self.intput_window = QWidget()
 		self.layout['input entry'] = QHBoxLayout(self.intput_window)
-
 		# Input goes here
 		self.message_input.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 		self.layout['input entry'].addWidget(self.message_input)
 
-		self.layout['buttons'] = QVBoxLayout()
-		self.layout['buttons'].addWidget(self.btn_submit)
-		self.layout['buttons'].addWidget(self.btn_stop)
-		self.layout['buttons'].addWidget(self.btn_clear, alignment=Qt.AlignmentFlag.AlignTop)
-		self.layout['buttons'].addWidget(self.btn_voice, alignment=Qt.AlignmentFlag.AlignTop)
-		self.layout['input entry'].addLayout(self.layout['buttons'])
-  
-		self.btn_stop.hide()
+		self.layout['button'] = QVBoxLayout()
+		self.layout['button'].addWidget(self.btn_submit)
+		self.layout['button'].addWidget(self.btn_clear, alignment=Qt.AlignmentFlag.AlignTop)
+		self.btn_submit.setFixedSize(170, 40)
+		self.btn_clear.setFixedSize(170, 40)
+		self.layout['input entry'].addLayout(self.layout['button'])
 
-		self.btn_voice.clicked.connect(lambda:(
-			self.btn_voice.setText('Listening...'),
-			self.btn_voice.setEnabled(False),
-			# if self.message_input.:
+		self.layout['buttons'] = QHBoxLayout()
+		self.layout['buttons'].addWidget(self.btn_voice) #, alignment=Qt.AlignmentFlag.AlignTop)
+		self.layout['buttons'].addWidget(self.btn_stop)
+		self.layout['buttons'].addWidget(self.btn_vprompt)
+		self.layout['buttons'].addWidget(self.btn_tprompt)
+		self.btn_voice.setFixedSize(170, 40)
+		self.btn_stop.setFixedSize(170, 40)
+		self.btn_vprompt.setFixedSize(170, 40)
+		self.btn_tprompt.setFixedSize(170, 40)
+		self.layout['input entry'].addLayout(self.layout['buttons'])
+
+		self.message_input.hide()
+		self.btn_voice.hide()
+		self.btn_stop.hide()
+		self.btn_submit.hide()
+		self.btn_clear.hide()
+		self.btn_vprompt.hide()
+		self.btn_vprompt.setEnabled(False)
+		if self.ai_firstname:
+			self.btn_vprompt.show()
+			self.btn_vprompt.setEnabled(True)
+
+		self.message_input.setEnabled(False)
+		self.btn_voice.setEnabled(False)
+		self.btn_stop.setEnabled(False)
+		self.btn_submit.setEnabled(False)
+		self.btn_clear.setEnabled(False)
+
+		self.btn_vprompt.clicked.connect(lambda:(
+			self.btn_voice.show(),
+			self.btn_stop.show(),
+			self.btn_voice.setEnabled(True),
+			self.btn_stop.setEnabled(False),
 			self.message_input.hide(),
 			self.btn_submit.hide(),
 			self.btn_clear.hide(),
 			self.btn_stop.show(),
-			self.status.showMessage('Text Prompt field disabled!'), 
-			self.start_listener()
-			
+			self.status.showMessage('Voice mode activated!'), 
+			self.voicePrompt()			
 		))
 
-		splitter.addWidget(self.intput_window)
-		splitter.setSizes([800, 200])
+		self.btn_tprompt.clicked.connect(lambda:(
+			self.btn_voice.hide(),
+			self.btn_stop.hide(),
+			self.btn_submit.setEnabled(True),
+			self.btn_clear.setEnabled(True),
+			self.message_input.setEnabled(True),
+			self.message_input.show(),
+			self.btn_submit.show(),
+			self.btn_clear.show(),
+			self.btn_stop.hide(),
+			self.status.showMessage('Text mode activated!'), 
+			self.textPrompt(),
+		))
+
+		self.splitter.addWidget(self.intput_window)
+		self.splitter.setSizes([800, 200])
 
 		# add status bar
 		self.status = QStatusBar()
@@ -229,20 +271,19 @@ class AIAssistant(QWidget):
 		# 	self.status.showMessage("Voice failed status!")
 		# print()
 		self.text_synthesis.synthesizeText(message['content'])
-		self.conversation_track += '<br /><span style="color:#fd9620"><strong>[Tiago]:</strong></span>'		
+		self.conversation_track += '<br /><span style="color:#fd9620"><strong>Tiago:</strong></span>'		
 		self.conversation_track +=  '<br/>' + message['content'].strip() + '<br /> <br />'
 		self.conversation_window.setMarkdown(self.conversation_track)		
 		self.status.showMessage('Tokens used status: {0}'.format(message['usage']))
 			
 		self.btn_submit.setEnabled(True)
-		self.btn_submit.setText('&Submit')
+		self.btn_submit.setText('&Submit text')
   
 		self.btn_voice.setEnabled(True)
 		self.btn_voice.setText("&Start voice")
 		# self.btn_clear.
 
-
-	def post_message(self):
+	def postMessage(self):
 		if not self.message_input.toPlainText():
 			self.status.showMessage('Prompt field is empty.')
 			return
@@ -258,9 +299,13 @@ class AIAssistant(QWidget):
 		# cursor.movePosition(QTextCursor.MoveOperation.End)
 		# self.conversation_window.setTextCursor(cursor)
 
+		if  self.ai_firstname:
+			username = self.ai_firstname
+			self.conversation_track += f'<span style="color:#5caa00"><strong>{username}:</strong></span>'
+		else:
+			username='User'
+			self.conversation_track += f'<span style="color:#5caa00"><strong>{username}:</strong></span>'
 		
-		self.conversation_track += '<span style="color:#5caa00"><strong>[Username#]:</strong></span>'
-		# self.conversation_track = '<p style="color:#5caa00"> <strong>[User]:</strong><br>'
 		self.conversation_track += '<br />' + text_string + '<br />'
 		self.conversation_window.setMarkdown(self.conversation_track)
 
@@ -273,55 +318,78 @@ class AIAssistant(QWidget):
 		self.t.start()
 		self.t.quit()
 
-	def start_listener(self):
-		if self.btn_voice.isEnabled():
-			self.btn_voice.setText('Listening...')
-			self.btn_voice.setEnabled(False)
-		if self.message_input.isVisible():
-			self.message_input.hide(),
-			self.btn_submit.hide(),
-			self.btn_clear.hide(),
-			self.btn_stop.show(),
-			self.status.showMessage('Text Prompt field disabled!'), 
+
+
+	def voicePrompt(self):
+		self.btn_vprompt.setEnabled(False)
+		self.btn_voice.setEnabled(True)
+		self.btn_vprompt.hide()
+		self.btn_tprompt.hide()
+
+	def textPrompt(self):
+		self.btn_vprompt.setEnabled(False)
+		self.btn_tprompt.setEnabled(False)
+		self.btn_vprompt.hide()
+		self.btn_tprompt.hide()			
+		self.btn_voice.hide(),
+		self.btn_stop.hide(),
 			
+		self.message_input.setEnabled(True)
+		self.btn_submit.setEnabled(True),
+		self.btn_clear.setEnabled(True),
+		self.message_input.show(),
+		self.btn_submit.show(),
+		self.btn_clear.show(),
+		self.btn_stop.hide(),
+		self.status.showMessage('Text mode activated!'), 
 
-		# time.sleep(2)
-		# self.start_listener()
-			# return
-		# else:
-		# self.status.clearMessage()
-
-		# self.btn_submit.setEnabled(False)
-		self.btn_stop.clicked.connect(lambda:(
-			self.stop_listener()
-		))
-
-		# self.voice_prompt=""
-		# if not self.recorder.start_recording():
-		# 	self.voice_prompt = self.recorder.start_recording()
-   
-		# text_string = self.message_input.toPlainText()
-		self.transcribed_string = self.transcript.transcribe_voice(prompt = self.recorder.start_recording())
+	def startListener(self):
+		self.btn_voice.setText('Listening...')
+		self.btn_voice.setEnabled(False)
+		self.btn_stop.setEnabled(True)
+		self.btn_vprompt.hide()
+		self.btn_tprompt.hide()
+				
+   		# text_string = self.message_input.toPlainText()
+		self.transcribed_string = self.transcribe.transcribeVoice(prompt = self.recorder.startRecording())
 		text_string = self.transcribed_string
-  
-		self.conversation_track += '<span style="color:#5caa00"><strong>[Username#]:</strong></span>'
-		# self.conversation_track = '<p style="color:#5caa00"> <strong>[User]:</strong><br>'
+	
+		if self.ai_firstname:
+			username = self.ai_firstname
+			self.conversation_track += f'<span style="color:#5caa00"><strong>{username}:</strong></span>'
+		else:
+			username='User'
+			self.conversation_track += f'<span style="color:#5caa00"><strong>{username}:</strong></span>'
+		
 		self.conversation_track += '<br />' + text_string + '<br />'
 		self.conversation_window.setMarkdown(self.conversation_track)
 
 
 		self.t.start()
 		self.t.quit()
+
+	def listener(self):
+		if self.btn_voice.clicked:
+			# text_string = self.message_input.toPlainText()
+			self.transcribed_string = self.transcribe.transcribeVoice(prompt = self.recorder.startRecording())
+			text_string = self.transcribed_string
+	
+			self.conversation_track += '<span style="color:#5caa00"><strong>[Username#]:</strong></span>'
+			# self.conversation_track = '<p style="color:#5caa00"> <strong>[User]:</strong><br>'
+			self.conversation_track += '<br />' + text_string + '<br />'
+			self.conversation_window.setMarkdown(self.conversation_track)
+
+			self.t.start()
+			self.t.quit()
      
-	def stop_listener(self):
-		if  self.recorder.start_recording():
+	def stopListener(self):
+		if  self.recorder.startRecording():
 			self.status.showMessage('Listening stopped!')
 			self.btn_voice.setText("&Start voice")
-			return self.recorder.stop_recording()
+			return self.recorder.stopRecording()
 		else:
 			self.btn_stop.hide()
 			self.status.showMessage('Listening has not started')
-
 
 	def reset_input(self):
 		self.message_input.clear()		
@@ -332,14 +400,14 @@ class AIAssistant(QWidget):
 		self.btn_submit.setText('&Submit text')
 		self.message_input.clear()
 
-	def zoom_in(self):
+	def zoomIn(self):
 		font = self.message_input.font()
 		# increase font size only when current size is less than 30 pixel
 		if font.pixelSize() < 30:
 			self.message_input.setStyleSheet('font-size: {0}px'.format(font.pixelSize() + 2))
 			self.conversation_window.setStyleSheet('font-size: {0}px;'.format(font.pixelSize() + 2))
 
-	def zoom_out(self):		
+	def zoomOut(self):		
 		font = self.message_input.font()
 		# decrease font size only when current size is smaller than 5
 		if font.pixelSize() > 5:
@@ -364,6 +432,7 @@ class TabManager(QTabWidget):
 		self.tabCloseRequested.connect(self.closeTab)
 
 	def closeTab(self, tab_index):
+		# self.tab_index_tracker += 1
 		if self.count() == 1:
 			return  
 		self.removeTab(tab_index)
@@ -382,12 +451,12 @@ class AppWindow(QWidget):
 				font-size: 13px;				
 			}
 		''') 
-
+		self.first_name = ''
 		self.file_manager = FileManager()
 		self.tab_index_tracker = 1	
 		self.layout = {}
 
-
+  
 		self.layout['main'] = QVBoxLayout()
 		self.setLayout(self.layout['main'])
 
@@ -398,17 +467,17 @@ class AppWindow(QWidget):
 		self.init_menu()
 		self.init_shortcut_assignment()
 
-		self.btn_vprompt = QPushButton('&Voice Prompt', clicked=self.voice_consent_ui)
+		self.btn_vprompt = QPushButton('Voice Prompt', clicked=self.consentUI)
 
 		self.vsplitter = QSplitter(Qt.Orientation.Vertical)		
 		self.vconsent_window = QTextBrowser(openExternalLinks=True, placeholderText='[Consent Form Placeholder - Voice Prompt]')
-		self.vconsent_1_CheckBox = QCheckBox('&I hereby GIVE my consent for the collection and use of my data as described in the consent request above.', clicked=self.consent_check_voice)
-		self.vconsent_2_CheckBox = QCheckBox('&I hereby WITHHOLD my consent', clicked=self.consent_check_text)
+		self.vconsent_1_CheckBox = QCheckBox('I hereby give my consent for the collection and use of my data as described above.', clicked=self.consent_check_voice)
+		self.vconsent_2_CheckBox = QCheckBox('I hereby with hold my consent', clicked=self.consent_check_text)
 		self.vinput_window = QWidget()
 		self.vsign_input = QLineEdit(placeholderText='Enter your fullname to sign')
-		self.vbtn_decline = QPushButton('&Decline', clicked=self.decline_chat_ui)
+		self.vbtn_decline = QPushButton('Decline', clicked=self.declineConsent)
 		# self.vbtn_agree = QPushButton('&Agree', clicked=self.start_voice_listener)
-		self.vbtn_agree = QPushButton('&Agree', clicked=self.agree_chat_ui)
+		self.vbtn_agree = QPushButton('Agree', clicked=self.AcceptConsent)
 
 
 		self.dashboard()
@@ -434,7 +503,7 @@ class AppWindow(QWidget):
 
 		# organize widgets	  
 		# ----------------	  	
-		self.btn_start = QPushButton('&Start') #, clicked=self.voice_consent_ui)
+		self.btn_start = QPushButton('&Start') #, clicked=self.consentUI)
 		self.btn_start.setFixedSize(170, 40)
 		self.layout['app_start'] = QHBoxLayout()
 		self.layout['app_start'].addWidget(self.btn_start)
@@ -444,12 +513,12 @@ class AppWindow(QWidget):
 		self.btn_start.clicked.connect(lambda:(
 			image.hide(),
 			self.btn_start.hide(),
-   			self.voice_consent_ui(),
+   			self.consentUI(),
 		))
   
 		# self.show()
 
-	def voice_consent_ui(self):
+	def consentUI(self):
 
 		# add sub layout manager
 		self.layout['dashboard'] = QFormLayout()
@@ -482,7 +551,8 @@ class AppWindow(QWidget):
  
 		# Input goes here
 		# self.vmessage_input = QLineEdit(placeholderText='Enter your name to sign')
-		self.vsign_input.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+		self.vsign_input.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+		self.vsign_input.setFixedSize(250, 40)
 		self.vsign_input.setEnabled(False)
 		self.layout['vconsent_options'].addWidget(self.vsign_input)
 
@@ -497,7 +567,9 @@ class AppWindow(QWidget):
 
 		self.layout['vbuttons'] = QVBoxLayout()
 		self.layout['vbuttons'].addWidget(self.vbtn_agree, alignment=Qt.AlignmentFlag.AlignTop)
+		self.vbtn_agree.setFixedSize(170, 40)
 		self.layout['vbuttons'].addWidget(self.vbtn_decline, alignment=Qt.AlignmentFlag.AlignTop)
+		self.vbtn_decline.setFixedSize(170, 40)
 		self.layout['vconsent_entry'].addLayout(self.layout['vbuttons'])
 
 
@@ -554,24 +626,68 @@ class AppWindow(QWidget):
 	def consent_check_text(self):
 		pass
 
-	def decline_chat_ui(self):
-		pass
+	def declineConsent(self):
+		if not self.vconsent_1_CheckBox.isChecked() and not self.vsign_input.text() and self.vconsent_2_CheckBox.isChecked():
+			# self.status.showMessage('You have withold your consent.')
 
-	def agree_chat_ui(self):
+			# Get the user name
+			# self.username(fullname=self.vsign_input.text())
+   
+			# save the consent as pdf to file
+			# self.saveConsent()
+   
+			widgets = [
+				self.vsplitter,
+				self.vconsent_window,
+				self.vconsent_1_CheckBox,
+				self.vconsent_2_CheckBox,
+				self.vinput_window,
+				self.vsign_input,
+				self.vbtn_decline,
+				self.vbtn_agree
+			]
+
+			for widget in widgets:
+				if widget.isVisible():
+					widget.hide()
+		
+			self.menu_bar.show()
+			self.init_ui()
+			self.btn_vprompt.hide()
+			self.init_configure_signal()
+		# else:
+			# self.status.showMessage('You can\'t decline!.')
+		# time.sleep(2)
+		# self.status.clearMessage()
+
+
+	def username(self, fullname):
+		full_name = fullname
+		name_parts = full_name.split()
+		self.first_name = name_parts[0].capitalize()
+		self.surname = name_parts[-1].capitalize()
+		return (self.first_name +' '+ self.surname)
+    
+	def AcceptConsent(self):
 		if not self.vconsent_1_CheckBox.isChecked():
 			self.status.showMessage('Please provide your consent by checking the box.')
 			return
 		elif not self.vsign_input.isEnabled():
 			self.vconsent_2_CheckBox.setChecked(False)
 			self.vsign_input.setEnabled(True)
-			self.status.showMessage('Please type in your fullname in the field to sign.')
+			self.status.showMessage('Please type in your full name in the field to sign.')
 			return
 		elif not self.vsign_input.text():
 			self.status.showMessage('Field is empty.')
 			return
 		else:
 			self.status.clearMessage()
+
+			# Get the user name
+			self.username(fullname=self.vsign_input.text())
+   
 			# save the consent as pdf to file
+			# self.saveConsent()
    
 			widgets = [
 				self.vsplitter,
@@ -597,23 +713,38 @@ class AppWindow(QWidget):
 		# add tab  manager
 		self.tab_manager = TabManager()
 		self.layout['main'].addWidget(self.tab_manager)
-
-		# ai_assistant = AIAssistant()
-		self.tab_manager.addTab(AIAssistant(), ' Conversion #{0}'.format(self.tab_index_tracker))
+		ai_assistant = AIAssistant(self.first_name)
+#		print('ai_assistant.ai_firstname: ',ai_assistant.ai_firstname)
+		self.tab_manager.addTab(AIAssistant(self.first_name), ' Mode #{0}'.format(self.tab_index_tracker))
 		self.set_tab_focus()
-
+  
 	def init_menu(self):
+		# self.menu_bar.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
 		file_menu = QMenu('&File', self.menu_bar)
-		file_menu.addAction('&Save output', self.save_output)
-		file_menu.addAction('S&ave log do DB', self.save_conversation_log_to_db)
+		file_menu.addAction('&New mode', self.add_tab)
+		file_menu.addAction('&Continue from previous')
+		file_menu.addAction('&Open recent')
+		file_menu.addSeparator()
+		file_menu.addAction('&Save to file', self.saveToFile)
+		file_menu.addAction('&Save to database', self.saveToDB)
+		file_menu.addSeparator()
+		file_menu.addAction('&Settings', self.appSettings)
+		file_menu.addAction('&Exit', self.exitApp)
 		self.menu_bar.addMenu(file_menu)
 
 		# view menu
 		view_menu = QMenu('&View', self.menu_bar)
-		view_menu.addAction('Zoom &in', self.zoom_in)
-		view_menu.addAction('Zoom &out', self.zoom_out)
+		view_menu.addAction('Zoom &in', self.zoomIn)
+		view_menu.addAction('Zoom &out', self.zoomOut)
 		self.menu_bar.addMenu(view_menu)
+
+		# help menu
+		help_menu = QMenu('&Help', self.menu_bar)
+		help_menu.addAction('&External link')
+		help_menu.addAction('&Update')
+		help_menu.addAction('&About')
+		self.menu_bar.addMenu(help_menu)
 
 	def init_shortcut_assignment(self):
 		shortcut_add_tab = QShortcut(QKeySequence('Ctrl+Shift+A'), self)
@@ -631,11 +762,23 @@ class AppWindow(QWidget):
 		# ai_assistant = AIAssistant()
   
 		# This section will show the persons name as the name of the tab. when conversion begins
-		self.tab_manager.addTab(AIAssistant(), 'Conversation #{0}'.format(self.tab_index_tracker))
+		self.tab_manager.addTab(AIAssistant(self.first_name), 'Mode #{0}'.format(self.tab_index_tracker))
 		self.tab_manager.setCurrentIndex(self.tab_manager.count()-1)
 		self.set_tab_focus()
 
-	def save_output(self):
+	# def add_tab(self):
+	# 	if self.tab_index_tracker < 2:
+	# 		self.tab_index_tracker += 1
+	# 		self.tab_manager.addTab(AIAssistant(self.first_name), 'Mode #{0}'.format(self.tab_index_tracker))
+	# 		self.tab_manager.setCurrentIndex(self.tab_manager.count() - 1)
+	# 		self.set_tab_focus()
+	# 	else:
+	# 		# You can show a message or take some other action to notify the user that the maximum number of tabs is reached.
+	# 		active_tab = self.tab_manager.currentWidget()
+	# 		active_tab.status.showMessage('Maximum number of tabs (2) reached. Cannot add more tabs.!')
+	# 		# print("Maximum number of tabs (2) reached. Cannot add more tabs.")
+
+	def saveToFile(self):
 		active_tab = self.tab_manager.currentWidget()
 		conversation_window_log = active_tab.conversation_window.toPlainText()
 		timestamp = current_timestamp()
@@ -646,14 +789,39 @@ class AppWindow(QWidget):
 			_f.write(conversation_window_log)
 		active_tab.status.showMessage('''File saved at {0}/{1}_Chat Log.txt'''.format(os.getcwd(), timestamp))
 
-	def save_conversation_log_to_db(self):		
+	def saveConsent(self):
+		# active_tab = self.tab_manager.currentWidget()
+		timestamp = current_timestamp('%Y-%m-%d %H:%M:%S')		
+  
+       # Get the content of the QTextBrowser
+		content = self.vconsent_window.toPlainText()
+
+        # Get the state of the QCheckBox (checked or unchecked)
+		checkbox_voice = self.vconsent_1_CheckBox.isChecked()
+		checkbox_text = self.vconsent_2_CheckBox.isChecked()
+
+        # Get the text in the QLineEdit
+		name = self.username(fullname=self.vsign_input.text())
+
+		values = f"'<pre>{content}</pre>', '{checkbox_voice}', '{checkbox_text}', '{name}', '{timestamp}'"
+		dbo.insert_record('consents', 'content, isVoice_checked, isText_checked, signed_name, created', values)
+		# active_tab.status.showMessage('Consent saved!')
+		self.status.showMessage('Consent saved!')
+ 
+	def saveToDB(self):		
 		timestamp = current_timestamp('%Y-%m-%d %H:%M:%S')		
 		active_tab = self.tab_manager.currentWidget()
 		messages = str(active_tab.modelgpt.messages).replace("'", "''")
 		values = f"'{messages}','{timestamp}'"
 
 		db.insert_record('message_logs', 'messages, created', values)
-		active_tab.status.showMessage('Record inserted')
+		active_tab.status.showMessage('Conversation saved!')
+
+	def appSettings(self):
+		pass
+
+	def exitApp(self):
+		return self.close()
 
 	def closeEvent(self, event):
 		"""
@@ -665,18 +833,18 @@ class AppWindow(QWidget):
 		for window in self.findChildren(AIAssistant):
 			window.t.quit()
 
-	def zoom_in(self):
+	def zoomIn(self):
 		active_tab = self.tab_manager.currentWidget()
-		active_tab.zoom_in()
+		active_tab.zoomIn()
    
-	def zoom_out(self):
+	def zoomOut(self):
 		active_tab = self.tab_manager.currentWidget()
-		active_tab.zoom_out()
+		active_tab.zoomOut()
 
 if __name__ == '__main__':
 	# load openai API key
 	config = ConfigParser()
-	config.read(openai_api())
+	config.read(openaiAPI())
 	API_KEY = config.get('openai', 'APIKEY')
 
 	# init ModelGPT SQLite database
@@ -689,14 +857,27 @@ if __name__ == '__main__':
 			created TEXT
 		'''
 	)
+		# Create the 'documents' table if it does not exist
+	dbo = RobotDatabase('handlers/includes/consent.db')
+	dbo.create_table(
+		'consents ', 
+  		'''
+			consent_id INTEGER PRIMARY KEY AUTOINCREMENT,
+			content TEXT,
+			isVoice_checked TEXT,
+			isText_checked TEXT,
+			signed_name TEXT,
+			created TEXT
+		'''
+	)
 
 	# construct application instance
 	app = QApplication(sys.argv)
-	app.setStyle('fusion')
+	# app.setStyle('fusion')
 
 	# load css skin
-	qss_style = open(resource_path('media/system/template/css_skins/dark_orange_style.qss'), 'r')
-	app.setStyleSheet(qss_style.read())
+	# qss_style = open(resource_path('media/system/template/css_skins/dark_blue_style.qss'), 'r')
+	# app.setStyleSheet(qss_style.read())
 
 	# launch app window
 	app_window = AppWindow()

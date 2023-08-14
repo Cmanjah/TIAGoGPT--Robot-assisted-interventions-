@@ -5,10 +5,10 @@ from handlers.manager import AudioManager
 # from handlers.synthesizer import Synthesizer
 
 
-def googlecloud_api():
+def googlecloudAPI():
     return  'handlers/includes/googlecloud-tts-api.json'
 
-def openai_api():
+def openaiAPI():
     return   'handlers/includes/api_key.ini'  
 
 class ModelGPT:
@@ -18,7 +18,7 @@ class ModelGPT:
         self.messages = []
         # self.text_synthesis = Synthesizer()
 
-    def send_request(self, prompt, max_tokens=100, temperature=1.0):  # max_tokens reduced from 1000 to 100
+    def sendRequest(self, prompt, max_tokens=100, temperature=1.0):  # max_tokens reduced from 1000 to 100
         try:
             self.messages.append({'role': 'user', 'content': prompt})
             response = self.openai.ChatCompletion.create(
@@ -61,30 +61,6 @@ class ChatAI:
         except Exception as e:
             return {'error': e}
 
-
-
-# 1. Extract keywords from text
-class KeywordAI:
-    def __init__(self, api_key):
-        self.openai = api_key
-        self.openai.api_key = api_key
-        self.prompt = []
-    
-    def keywordExtractByAI(self, prompt, temperature=0.5, max_token=15):
-        try:
-            response = openai.Completion.create(
-                model="text-davinci-003",
-                prompt=self.prompt,
-                temperature=temperature,
-                max_tokens=max_token, # Keep max token low
-                top_p=1.0,
-                frequency_penalty=0.8,
-                presence_penalty=0.0
-            )
-            return response
-        except Exception as e:
-            return {'error': e}
-
     
 class Transcriber:
     def __init__(self, api_key):
@@ -92,7 +68,7 @@ class Transcriber:
         self.api_key = api_key
         self.model_id = 'whisper-1'
 
-    def transcribe_voice(self, prompt):
+    def transcribeVoice(self, prompt):
         media_file_path = prompt
         media_file = open(file=media_file_path, mode='rb')
 
@@ -108,7 +84,7 @@ class Transcriber:
     
 class Synthesizer:
     def __init__(self):
-        os.environ['GOOGLE_APPLICATION_CREDENTIALS']= googlecloud_api()
+        os.environ['GOOGLE_APPLICATION_CREDENTIALS']= googlecloudAPI()
         self.client = texttospeech.TextToSpeechClient()
         pygame.init()
         # Initialize the pygame mixer module
@@ -155,6 +131,3 @@ class Synthesizer:
         # Play the recently saved audio content
         self.autoplay(self.audio_manager.recent_file_finder())
         
-
-# syn = Synthesizer()
-# syn.synthesizeText("Hello, this is Charles Anjah! How can I help you today?")
