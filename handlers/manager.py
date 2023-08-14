@@ -102,7 +102,7 @@ class FileManager:
         return os.path.join(self.base_path, relative_path)	
     
     def consent(self):
-        text_file_path = "media/system/template/consent.txt"  # Replace this with the path to your text file
+        text_file_path = "media/system/template/consent.md"  # Replace this with the path to your text file
 
         # Read the content of the text file
         with open(text_file_path, "r") as file:
