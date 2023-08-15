@@ -1,5 +1,5 @@
-
-# TIAGoGPT: Exploring the Potential of LLMs in Tiago Robot-Assisted Interventions for Supporting Children with Social Skill Difficulties 
+# &#8759; TIAGoGPT: Exploring the Potential of LLMs in Tiago Robot-Assisted Interventions for Supporting Children with Social Skill Difficulties 
+![TIAGoGPT Home Page](https://github.com/Cmanjah/TIAGoGPT--Robot-assisted-interventions-/assets/116933114/490aa92a-ef6b-4a87-ac64-c786221a02d4)
 
 Date: July 2023
 
@@ -18,6 +18,8 @@ The project specific objectives are:
 5.	To incorporate a responsible AI implementation culture by utilising a digital consent form to create awareness of the data policy applicable to the usage of the developed system.
 6.	To deploy the developed AI systems onto the TIAGo elite robot.
 7.	To evaluate and test the AI systems deployed on the TIAGo elite robot.
+
+![TIAGoGPT](https://github.com/Cmanjah/TIAGoGPT--Robot-assisted-interventions-/assets/116933114/48a7fbe5-3eba-4824-916d-97301da8d2d9)
 
 
 ## CURRENT SYSTEM FEATURES/ MODULES IMPLEMENTED
