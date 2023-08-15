@@ -1,15 +1,5 @@
 {
-  "type": "service_account",
-  "project_id": "ai-and-machine-learning-390821",
-  "private_key_id": "9d4d1972807c9aabcb934e28f57a2d393dd822dc",
-  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDTLlMHQqj/pIgL\ngoA6JF1GF98GZIR6Xuu+5A6jBqX89q1in9AgW4RR9GI/sre382f/6DyA+KPZUDMR\nQVkJj8JwtFU3elpDyl5L3xj92dQRfQhqwrzgZxv5LH/B0jYmlUKvyzQJ6lG/+M4h\ntoeSkfbDHzj5lfK9U0Kh6w9+Mrwe4x8VV4HBwckS6NZDZWsDWCk/b4kO+IJ75/Yk\nwPlKQG774sJRY/zBMGG+bPoqyZoqrDIx45yLme+rA2/peU4dhx3ZqZEWkv3X6w83\ngMPofJQTk7tejCBbbYP60T3oYn8JFdcWcEgKWmf3tTS7cHupGIRnp+9S4ylYWcJt\nL+5WMamJAgMBAAECggEAC//539O93qjuwhisSKGAW1dH6QkVLg7uvm4fFsxt6i3q\nNEx4ex44KqAEZTI2llFSe4wqw/lc9iBEhpp8ALsWhWj53qkpL+jz6sPGm8Yg8s10\nCPz/1pCFWmdY6x6SzSZ2H58gWd/ivVHaBLhmg8Gfj/7aMfR/UprEkobU3orrfaW3\ny5UgLr+lcH4MgxJA2j/7wPVrqK4EsLrM676nKZrIUE0FUeSIlgqsGI/sxPFDcc3Y\ngH0mBzkjVTdPQZVMxtJDlIppYGi9jc8008N0r7Yx6qG/KDF1tHcW2LxSXky31VLK\nm2kBUlm2GJVv0ONkvX5WmcB5aQGnlRAB7NqzMZkGMQKBgQD1oRoilqjJPipFFVdk\nC7bJwjf8tN8dgNECFw+535YcJiZRBLQfe4a2Nl1prIP2qHA70rfL5t4cOtXqW45+\noFDCh/ow34tbItfjqw7U96TSvEog6vlmr70Obrjg9aveIyEyJf1TfO0+fmpFxEss\njYDkL+r09hFyrgfm8YKoxK/tAwKBgQDcGOKlkfMKRT5cTtyJi4Ipzfp2Na/8TVd1\nZBAwRoKYd1QdyEwnVnyz1VOqjlsPXL/KfZRoIM3MZuwLrg0FGbztr90qIFYkmCaD\nD5Z5TzxIkieoneBphWnWn/NNpPVzYym4CTkpHdqSFK9FbBBMknGsT3MRW8iZVNTQ\nbMkKbb7LgwKBgChhYcCJ8BmVZLGSvpkt69DjYvziZ0OcZ7/mNqmh/jWGeAodsdbz\nIcRWz6iNuewU6M6M57ZXr/AIJB6xCo36oQw5+oGKXoiPA9rjxj5wr+INHkqnFnUx\nMu1qem5RNP4B3HU4FZtiEEaT1bi+enVKlgPtdLzsrxWhUp8+2PIR07ItAoGBAMTE\nQqu+5UcDTJL9tdAJtt5k1UulB6ZKBqxePtLJ1qsz0zGlBeANRAMJ7niGOAZt5tDC\noFDPMu1P/isa+Wzb67mbBeBJdHnWxGdbIi1llwFSGL54Fk6ABXTpHn0FwqHbv0pW\nhJGrrOH4OBGaYJ/0NEfV54tXQOlDm9aRytHV90K9AoGBAI6ul16btGPtpRFBeZk3\nRPvYaf6BNRWsu1ymg8NwACp8VztgUJGwxrd8UVFSW5Y7R6jLXgBv7V9AB5tAkkWp\nNA8w4CW1V3V8+ZcpTfojHxsBRKAJwqH6LCKNsoSFDUE2SmgmDUJjFNn4mh5fTTpw\nzkkEMV2fXc9unH+58s+6qzgP\n-----END PRIVATE KEY-----\n",
-  "client_email": "chatwithrobot@ai-and-machine-learning-390821.iam.gserviceaccount.com",
-  "client_id": "104432553943125257238",
-  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-  "token_uri": "https://oauth2.googleapis.com/token",
-  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/chatwithrobot%40ai-and-machine-learning-390821.iam.gserviceaccount.com",
-  "universe_domain": "googleapis.com"
+ 
 }
 
 
