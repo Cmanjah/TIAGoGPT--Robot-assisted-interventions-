@@ -14,6 +14,7 @@ class RobotDatabase:
         create_table_sql = f"CREATE TABLE IF NOT EXISTS {table_name} ({columns});"
         self.cursor.execute(create_table_sql)
         self.conn.commit()
+        
 
     def insert_record(self, table_name, columns, record):
         '''
@@ -22,6 +23,7 @@ class RobotDatabase:
         sql = f'INSERT INTO {table_name} ({columns}) VALUES ({record})'
         self.cursor.execute(sql)
         self.conn.commit()
+
 
     def retrieve_records(self, table_name, conditions=None):
         """

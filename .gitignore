@@ -151,3 +151,11 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 *.cfg
+*.wav
+*.txt
+*.json
+*.mp3
+*.ini
+*.db
+*.ini
+*.db

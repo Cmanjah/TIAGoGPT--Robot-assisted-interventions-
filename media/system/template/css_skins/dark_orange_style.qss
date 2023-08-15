@@ -466,7 +466,8 @@ QRadioButton::indicator:hover, QCheckBox::indicator:hover
 
 QCheckBox::indicator:checked
 {
-    image:url(:/dark_orange/img/checkbox.png);
+    border: 2px solid #ffaa00;
+    image:url(:/media/system/template/css_skins/rc/orange/checkbox.png);
 }
 
 QCheckBox::indicator:disabled, QRadioButton::indicator:disabled
