@@ -1,8 +1,8 @@
 import os
-import sys, time
+import sys, time, json
 from datetime import datetime
 from configparser import ConfigParser
-import typing
+import typing 
 # import markdown
 from PyQt6.QtWidgets import (QApplication, QWidget, QLabel, QPushButton, QSlider,
 							 QTabWidget, QTextEdit, QCheckBox, QLineEdit, QTextBrowser, QMenu, QMenuBar, QSplitter, 
@@ -13,8 +13,8 @@ from PyQt6.QtGui import QIcon, QTextCursor, QShortcut, QKeySequence, QPixmap, QP
 from PyQt6.QtPrintSupport import QPrinter
 from handlers.endpoint import ModelGPT, Synthesizer, Transcriber, openaiAPI
 from handlers.db import RobotDatabase
-from handlers.manager import ChatManager, FileManager
 from handlers.recorder import AudioRecorder
+from controller.manager import FileManager, ChatManager
 
 
 def resource_path(relative_path):
@@ -49,11 +49,9 @@ class ModelGPTThread(QThread):
 		temperature = float('{0:.2f}'.format(self.ai_assistant.temperature.value() / 100))
 		response = self.ai_assistant.modelgpt.generateResponse(text_string.strip(), max_tokens=max_tokens, temperature=temperature)
 		self.clear_input.emit()
-		self.response_received.emit(response)
 		self.ai_assistant.text_synthesis.synthesizeText(response['content'])
-		self.ai_assistant.btn_voice.setText('Waiting...')
-		self.ai_assistant.btn_voice.setEnabled(False)
-		self.ai_assistant.btn_stop.setEnabled(False)
+		self.response_received.emit(response)
+
 	
 class fileManagerThread(QThread):
     saveChat = pyqtSignal(dict)
@@ -76,7 +74,6 @@ class SynthesisingThread(QThread):
     def run(self):
         greetings = self.ai_assistant.modelgpt.greetResponse(self.ai_assistant.mode)
         self.ai_assistant.text_synthesis.synthesizeText(greetings['content'])
-        print("mode: ", self.ai_assistant.mode)
         self.synthesiseAudio.emit(greetings)
         
   
@@ -98,6 +95,7 @@ class AudioRecordingThread(QThread):
             self.recordingEnded.emit(transcribed_string)
         except:
             print('Voice transcription could not be done. Start Voice recording again!')
+    
         
     def endListening(self):
         end = self.ai_assistant.recorder.stopRecording()
@@ -151,8 +149,6 @@ class AIAssistant(QWidget):
 		self.mode = ""
 		self.thread_synthesis.synthesiseAudio.connect(self.synAudio)
 
-
-  
 	
 	def init_ui(self):
 		# add sub layout manager
@@ -194,6 +190,7 @@ class AIAssistant(QWidget):
 		# Chatwindow
 		self.chat_GUI = QTextBrowser(openExternalLinks=True)
 		self.chat_GUI.setReadOnly(True)
+		self.chat_GUI.setEnabled(False)
 		self.splitter.addWidget(self.chat_GUI) 
 
 		self.intput_window = QWidget()
@@ -227,7 +224,8 @@ class AIAssistant(QWidget):
 		self.btn_clear.hide()
 		self.btn_vprompt.hide()
 		self.btn_vprompt.setEnabled(False)
-		if self.ai_firstname:
+  
+		if not self.ai_firstname == 'Anonymous':
 			self.btn_vprompt.show()
 			self.btn_vprompt.setEnabled(True)
 
@@ -240,6 +238,7 @@ class AIAssistant(QWidget):
 		self.btn_vprompt.clicked.connect(lambda:(
 			self.btn_voice.show(),
 			self.btn_stop.show(),
+			self.chat_GUI.setEnabled(True),
 			self.btn_voice.setEnabled(True),
 			self.btn_stop.setEnabled(False),
 			self.message_input.hide(),
@@ -253,6 +252,7 @@ class AIAssistant(QWidget):
 		self.btn_tprompt.clicked.connect(lambda:(
 			self.btn_voice.hide(),
 			self.btn_stop.hide(),
+			self.chat_GUI.setEnabled(True),
 			self.btn_submit.setEnabled(True),
 			self.btn_clear.setEnabled(True),
 			self.message_input.setEnabled(True),
@@ -298,11 +298,13 @@ class AIAssistant(QWidget):
 			self.status.showMessage(message['error'].user_message)
 			return
 		
-		self.status.setStyleSheet('''
-			color: white;
-		''')
-
-
+		self.btn_voice.setEnabled(False)
+		self.btn_stop.setEnabled(True)
+		self.btn_voice.setText("Please wait!")
+		self.btn_voice.setStyleSheet('''
+				color: red;
+				border: 2px solid red;
+			''')
 
 		# TIAGo response placeholder container
 #		self.text_synthesis.synthesizeText(message['content'])
@@ -321,7 +323,7 @@ class AIAssistant(QWidget):
 			self.btn_stop.setEnabled(False)
 			self.btn_voice.setText("&Start voice")
 			# Listening Loop
-			time.sleep(5)
+			time.sleep(2)
 			self.startListener()
 
 
@@ -338,14 +340,7 @@ class AIAssistant(QWidget):
 		text_string = self.message_input.toPlainText()
 
 		self.chat_holder+=  '<div style="margin-bottom: 15px; padding:2px 5px 2px 5px; border-radius: 25px; border: 5px solid #5caa00; width:300px; float:right">'
-		# self.chat_holder+= text_string
-		if self.ai_firstname:
-			username = self.ai_firstname
-			self.chat_holder+= f'<span style="color:#5caa00; float: left; font-style: italic; font-weight: bold;">{username}</span>'
-		else:
-			username='User'
-			self.chat_holder+= f'<span style="color:#5caa00; float: left; font-style: italic; font-weight: bold;">{username}</span>'
-		
+		self.chat_holder+= f'<span style="color:#5caa00; float: left; font-style: italic; font-weight: bold;">{self.ai_firstname}</span>'	
 		self.chat_holder+= '<br/>' + text_string + '</div>'
 		self.chat_GUI.setMarkdown(self.chat_holder)
 
@@ -362,7 +357,11 @@ class AIAssistant(QWidget):
 		
 		self.btn_voice.show(),
 		self.btn_stop.show(),
-		self.btn_voice.setText('Listening...')
+		self.btn_voice.setText('Please wait!')
+		self.btn_voice.setStyleSheet('''
+				color: red;
+				border: 2px solid red;
+			''')
 		self.btn_voice.setEnabled(False)
 		self.btn_stop.setEnabled(True)
 		self.message_input.hide(),
@@ -375,10 +374,6 @@ class AIAssistant(QWidget):
 		self.thread_synthesis.start()
 		self.thread_synthesis.quit()
   
-		# greetings = self.modelgpt.greetResponse(mode='voice')
-		# self.text_synthesis.synthesizeText(greetings['content'])
-		# self.updateChatGUI(greetings)
-
 	def synAudio(self, greetings):
 		self.updateChatGUI(greetings)
 
@@ -402,39 +397,37 @@ class AIAssistant(QWidget):
 		self.mode = 'text'
 		self.thread_synthesis.start()
 		self.thread_synthesis.quit()
-  
-  
+    
 	def startListener(self):
 		self.btn_voice.setText('Listening...')
+		self.btn_voice.setStyleSheet('''
+				color: green;
+				border: 2px solid green;
+			''')
 		self.btn_voice.setEnabled(False)
 		self.btn_stop.setEnabled(True)
 		self.btn_vprompt.hide()
 		self.btn_tprompt.hide()
 
 		self.thread_audio.start()
-		self.thread_audio.quit()
-	
+		self.thread_audio.quit()	
 
 	def listeningEnded(self, transcribed_string):
 
 		self.transcribed_string = transcribed_string
 		text_string = transcribed_string
 
-		self.btn_voice.setText('Waiting...')
+		self.btn_voice.setText('Please wait!')
+		self.btn_voice.setStyleSheet('''
+				color: red;
+				border: 2px solid red;
+			''')
 		self.btn_voice.setEnabled(False)
 		self.btn_stop.setEnabled(False)
 
 		self.chat_holder+=  '<div style="margin-bottom: 15px; padding:2px 5px 2px 5px; border-radius: 25px; border: 5px solid #5caa00; width:300px; float:right">'
-		# self.chat_holder+= text_string
-		if self.ai_firstname:
-			username = self.ai_firstname
-			self.chat_holder+= f'<span style="color:#5caa00; float: right; font-style: italic;'
-			self.chat_holder+= f'font-weight: bold;">{username}</span>'
-		else:
-			username='User'
-			self.chat_holder+= f'<span style="color:#5caa00; float: right; font-style: italic;'
-			self.chat_holder+= f'font-weight: bold;">{username}</span>'
-		
+		self.chat_holder+= f'<span style="color:#5caa00; float: right; font-style: italic;'
+		self.chat_holder+= f'font-weight: bold;">{self.ai_firstname}</span>'		
 		self.chat_holder+= '<br />' + text_string + '</div>'
 		self.chat_GUI.setMarkdown(self.chat_holder)
 
@@ -528,7 +521,7 @@ class AppWindow(QWidget):
 				font-size: 13px;				
 			}
 		''') 
-		self.first_name = ''
+		self.first_name = 'Anonymous'
 		self.file_manager = FileManager()
 		self.tab_index_tracker = 1	
 		self.layout = {}
@@ -550,10 +543,10 @@ class AppWindow(QWidget):
 		self.vconsent_window = QTextBrowser(openExternalLinks=True, placeholderText='[Consent Form Placeholder - Voice Prompt]')
 		self.vconsent_1_CheckBox = QCheckBox('I hereby give my consent for the collection and use of my data as described above.', clicked=self.consent_check_voice)
 		self.vconsent_2_CheckBox = QCheckBox('I hereby with hold my consent', clicked=self.consent_check_text)
+		self.vconsent_minor = QCheckBox("Legal guardian providing consent on behalf of a minor? (if yes, please select)", clicked=self.consent_minor)
 		self.vinput_window = QWidget()
 		self.vsign_input = QLineEdit(placeholderText='Enter your full name to sign')
 		self.vbtn_decline = QPushButton('Decline', clicked=self.declineConsent)
-		# self.vbtn_agree = QPushButton('&Agree', clicked=self.start_voice_listener)
 		self.vbtn_agree = QPushButton('Agree', clicked=self.acceptConsent)
 
 
@@ -617,11 +610,13 @@ class AppWindow(QWidget):
 		# set initial states of the checkboxes
 		self.vconsent_1_CheckBox.setChecked(False)
 		self.vconsent_2_CheckBox.setChecked(True)
+		self.vconsent_minor.hide()
 
 		# self.vinput_window = QWidget()
 		self.layout['vconsent_entry'] = QHBoxLayout(self.vinput_window)
 		self.layout['vconsent_options'] = QVBoxLayout()
 		self.layout['vconsent_options'].addWidget(self.vconsent_1_CheckBox)
+		self.layout['vconsent_options'].addWidget(self.vconsent_minor)
 		self.layout['vconsent_options'].addWidget(self.vconsent_2_CheckBox)
 		self.layout['vconsent_entry'].addLayout(self.layout['vconsent_options'])
 
@@ -637,12 +632,23 @@ class AppWindow(QWidget):
 
 		self.vconsent_1_CheckBox.clicked.connect(lambda:(
 			self.vsign_input.setEnabled(True),
-			self.vconsent_2_CheckBox.setChecked(False)
+			self.vconsent_2_CheckBox.setChecked(False),
+			self.vconsent_minor.show(),
+			self.vconsent_minor.setChecked(False)
 		))
 
 		self.vconsent_2_CheckBox.clicked.connect(lambda:(
 			self.vsign_input.setEnabled(False),
-			self.vconsent_1_CheckBox.setChecked(False)
+			self.vconsent_1_CheckBox.setChecked(False),
+			self.vconsent_minor.setChecked(False),
+			self.vconsent_minor.hide()
+		))
+  
+		self.vconsent_minor.clicked.connect(lambda:(
+			self.vconsent_1_CheckBox.setChecked(True),
+			self.vconsent_2_CheckBox.setChecked(False),
+			self.vsign_input.setEnabled(True)
+			
 		))
 
 		# add buttons
@@ -666,7 +672,7 @@ class AppWindow(QWidget):
   
   		# add status bar
 		self.status = QStatusBar()
-		self.status.setStyleSheet('font-size: 12px; color: red;')
+		# self.status.setStyleSheet('font-size: 12px; color: red;')
 		self.layout['status_message'] = QVBoxLayout()
 		self.layout['status_message'].addWidget(self.status)
 		self.layout['main'].addLayout(self.layout['status_message'])
@@ -715,15 +721,11 @@ class AppWindow(QWidget):
 		pass
 
 	def declineConsent(self):
-		if not self.vconsent_1_CheckBox.isChecked() and not self.vsign_input.text() and self.vconsent_2_CheckBox.isChecked():
-			# self.status.showMessage('You have withold your consent.')
+		if self.vconsent_1_CheckBox.isChecked() or self.vsign_input.text() or self.vconsent_minor.isChecked() or self.acceptConsent():
+			self.status.showMessage('To decline, please check the withhold consent box.')
+			return
+		elif self.vconsent_2_CheckBox.isChecked():
 
-			# Get the user name
-			# self.username(fullname=self.vsign_input.text())
-   
-			# save the consent as pdf to file
-			# self.saveConsent()
-   
 			widgets = [
 				self.vsplitter,
 				self.vconsent_window,
@@ -743,15 +745,17 @@ class AppWindow(QWidget):
 			self.init_ui()
 			self.btn_vprompt.hide()
 			self.init_configure_signal()
-		# else:
-			# self.status.showMessage('You can\'t decline!.')
-		# time.sleep(2)
-		# self.status.clearMessage()
+			# Use default user name for declined consent
+			self.username()
+		else:
+			print("No more option available!")
+			return
 
+	def consent_minor(self):
+		pass
 
-	def username(self, fullname):
-		full_name = fullname
-		name_parts = full_name.split()
+	def username(self, fullname = 'anonymous user'):    
+		name_parts = fullname.split()
 		self.first_name = name_parts[0].capitalize()
 		self.surname = name_parts[-1].capitalize()
 		return (self.first_name +' '+ self.surname)
@@ -776,6 +780,7 @@ class AppWindow(QWidget):
    
 			# save the consent as pdf to file
 			# self.saveConsent()
+			self.saveConsent()
    
 			widgets = [
 				self.vsplitter,
@@ -814,8 +819,9 @@ class AppWindow(QWidget):
 		file_menu.addAction('&Continue from previous')
 		file_menu.addAction('&Open recent')
 		file_menu.addSeparator()
-		file_menu.addAction('&Save to file', self.saveToFile)
-		file_menu.addAction('&Save to database', self.saveToDB)
+		# file_menu.addAction('&Save to file', self.saveToFile)
+		file_menu.addAction('&Save chat history', self.saveChat)
+		# file_menu.addAction('&Save to database', self.saveToDB)
 		file_menu.addSeparator()
 		file_menu.addAction('&Settings', self.appSettings)
 		file_menu.addAction('&Exit', self.exitApp)
@@ -853,10 +859,8 @@ class AppWindow(QWidget):
 
 	def add_tab(self):
 		self.tab_index_tracker += 1
-		# ai_assistant = AIAssistant()
-  
 		# This section will show the persons name as the name of the tab. when conversion begins
-		self.tab_manager.addTab(AIAssistant(self.first_name), 'Mode #{0}'.format(self.tab_index_tracker))
+		self.tab_manager.addTab(AIAssistant(self.first_name),'Mode #{0}'.format(self.tab_index_tracker))
 		self.tab_manager.setCurrentIndex(self.tab_manager.count()-1)
 		self.set_tab_focus()
 
@@ -874,44 +878,110 @@ class AppWindow(QWidget):
 
 	def saveToFile(self):
 		active_tab = self.tab_manager.currentWidget()
-		conversation_window_log = active_tab.chat_GUI.toPlainText()
+		chat_gui_log = active_tab.chat_GUI.toPlainText()
 		timestamp = current_timestamp()
 
 		chat_log = ChatManager()		
 		# This will be saved to a json file not text in a different directory
 		with open(f'{chat_log.get_chat_log_path()}/{timestamp}_Chat Log.txt', 'w', encoding='UTF-8') as _f:
-			_f.write(conversation_window_log)
-		active_tab.status.showMessage('''File saved at {0}/{1}_Chat Log.txt'''.format(os.getcwd(), timestamp))
+			_f.write(chat_gui_log)
+		active_tab.status.showMessage('''File saved at {0}/{1}_Chat Log.txt'''.format(chat_log.get_chat_log_path(), timestamp))
 
-	def SavetoPDF (self):
-		filename = QFileDialog.getSaveFileName (self, 'Save to PDF')
-		if filename:
-			printer = QPrinter (QPrinter.HighResolution)
-			printer.setPageSize (QPrinter.A4)
-			printer.setColorMode (QPrinter.Color)
-			printer.setOutputFormat (QPrinter.PdfFormat)
-			printer.setOutputFileName (filename)
-			self.text.document ().print_ (printer)
 
 
 	def saveConsent(self):
-		# active_tab = self.tab_manager.currentWidget()
-		timestamp = current_timestamp('%Y-%m-%d %H:%M:%S')		
-  
-       # Get the content of the QTextBrowser
+        # Get the content of the QTextBrowser
 		content = self.vconsent_window.toPlainText()
-
         # Get the state of the QCheckBox (checked or unchecked)
 		checkbox_voice = self.vconsent_1_CheckBox.isChecked()
 		checkbox_text = self.vconsent_2_CheckBox.isChecked()
-
+		checkbox_minor = self.vconsent_minor.isChecked()
         # Get the text in the QLineEdit
 		name = self.username(fullname=self.vsign_input.text())
+		timestamp = current_timestamp('%Y-%m-%d %H:%M:%S')
+		token = self.file_manager.generateToken(name, checkbox_minor, checkbox_text, checkbox_voice, timestamp)
+		data = {
+            "id": self.get_next_id(self.data),
+            "content": content,
+            "accept_voice": checkbox_voice,
+            "accept_text": checkbox_text,
+            "Is_minor": checkbox_minor,
+            "full_name": name,
+            "token": token,
+            "timestamp": timestamp
+        }
+		# Save Consent to JSON file
+		self.data.append(data)
+		filename = self.file_manager.con_filename+'.json'
+		with open(filename, 'w') as file:
+			json.dump(self.data, file, indent=4)
+		print('Consent saved at 1st location -------------------------------------SUCCESS')
 
-		values = f"'<pre>{content}</pre>', '{checkbox_voice}', '{checkbox_text}', '{name}', '{timestamp}'"
-		dbo.insert_record('consents', 'content, isVoice_checked, isText_checked, signed_name, created', values)
-		# active_tab.status.showMessage('Consent saved!')
-		self.status.showMessage('Consent saved!')
+		# Save Consent to SQLite
+		self.file_manager.saveToSqlite(content, checkbox_voice, checkbox_text, checkbox_minor, name)
+		print('Consent saved at 2nd location -------------------------------------SUCCESS')
+		# self.status.showMessage('Consent saved!')
+
+
+	def get_next_id(self,data):
+		return len(data) + 1
+
+
+	def load_data(self):
+		try:
+			filename = self.file_manager.con_filename+'.json'
+			with open(filename) as file:
+				self.data = json.load(file)
+		except FileNotFoundError:
+			self.data = []
+
+
+	def saveChat(self):
+		# Save Chat to db
+		timestamp = current_timestamp('%Y-%m-%d %H:%M:%S')		
+		active_tab = self.tab_manager.currentWidget()
+		messages = str(active_tab.modelgpt.messages).replace("'", "''")
+		values = f"'{messages}','{timestamp}'"
+		db.insert_record('message_logs', 'messages, created', values)
+		print(f'Chat history saved to DB by {self.first_name} -------------------------------SUCCESS')
+    
+		# Save chat to text file
+		active_tab = self.tab_manager.currentWidget()
+		chat_gui_log = active_tab.chat_GUI.toPlainText()
+		# wrapping up the message
+		chat_history = "'''"+active_tab.chat_GUI.toPlainText()+"'''"
+		timestamp = current_timestamp()
+		chat_log = ChatManager()		
+		# This will be saved to a json file not text in a different directory
+		filename = f'{chat_log.get_chat_log_path()}/{timestamp}'
+		with open(filename+'_Chat Log.txt', 'w', encoding='UTF-8') as _f:
+			_f.write(chat_gui_log)
+		print('''File saved at {0}/{1}_Chat Log.txt ----------------------------------------SUCCESS'''.format(chat_log.get_chat_log_path(), timestamp))
+		self.save_chat_history_to_json(chat_history,f'''{chat_log.get_chat_log_path()}/chatDB/{timestamp}_{self.first_name}.json''', self.first_name)
+		active_tab.status.showMessage('Chat saved!')
+
+	def save_chat_history_to_json(self, data, filename, username):
+		dialogues = []
+		current_dialogue = None
+
+		for line in data.split('\n'):
+			if line.startswith("TiagoGPT"):
+				if current_dialogue:
+					dialogues.append(current_dialogue)
+				current_dialogue = {"user": "TiagoGPT", "messages": []}
+			elif line.startswith(username):
+				if current_dialogue:
+					dialogues.append(current_dialogue)
+				current_dialogue = {"user": username, "messages": []}
+			elif current_dialogue:
+				current_dialogue["messages"].append(line.strip())
+
+		if current_dialogue:
+			dialogues.append(current_dialogue)
+
+		with open(filename, 'w') as file:
+			json.dump(dialogues, file, indent=4)
+
  
 	def saveToDB(self):		
 		timestamp = current_timestamp('%Y-%m-%d %H:%M:%S')		
@@ -920,7 +990,8 @@ class AppWindow(QWidget):
 		values = f"'{messages}','{timestamp}'"
 
 		db.insert_record('message_logs', 'messages, created', values)
-		active_tab.status.showMessage('Chatsaved!')
+		print(f'Chat history saved by {self.first_name} -------------------------------SUCCESS')
+		active_tab.status.showMessage('Chat saved!')
 
 	def appSettings(self):
 		pass
@@ -951,7 +1022,7 @@ if __name__ == '__main__':
 	config = ConfigParser()
 	config.read(openaiAPI())
 	API_KEY = config.get('openai', 'APIKEY')
-
+	m_file = FileManager()
 	# init ModelGPT SQLite database
 	db = RobotDatabase('handlers/includes/modelgpt.db')
 	db.create_table(
@@ -983,8 +1054,8 @@ if __name__ == '__main__':
 	# app.setStyle('fusion')
 
 	# style 2 - load css skin
-	# qss_style = open(resource_path('media/system/template/css_skins/dark_orange_style.qss'), 'r')
-	# app.setStyleSheet(qss_style.read())
+	qss_style = open(resource_path('media/system/template/css_skins/dark_orange_style.qss'), 'r')
+	app.setStyleSheet(qss_style.read())
 
 	# style 3 - load css skin
 	# qss_style = open(resource_path('media/system/template/css_skins/dark_blue_style.qss'), 'r')
@@ -992,6 +1063,7 @@ if __name__ == '__main__':
 
 	# launch app window
 	app_window = AppWindow()
+	app_window.load_data()
 	app_window.show()
 
 	sys.exit(app.exec())

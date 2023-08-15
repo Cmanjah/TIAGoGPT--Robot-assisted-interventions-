@@ -2,11 +2,11 @@ import pyaudio
 import numpy as np
 import soundfile as sf
 import time, os
-from handlers.manager import AudioManager
+from controller.manager import AudioManager
 
 
 class AudioRecorder:
-    def __init__(self, duration=10, sample_rate=44100, channels=1, max_threshold=2000, min_threshold=20, silence_duration=1):
+    def __init__(self, duration=20, sample_rate=44100, channels=1, max_threshold=2000, min_threshold=20, silence_duration=1):
         self.duration = duration
         self.sample_rate = sample_rate
         self.channels = channels
@@ -47,7 +47,7 @@ class AudioRecorder:
             if energy > self.max_threshold:
                 if not recording_started:
                     print("Recording started!")
-                    print("Someone seems to be talking...")
+                    print("Recording started at maximum threshold-----------------------------------SUCCESS")
                     recording_started = True
                     start_time = time.time()
                 self.frames.append(audio_data)
@@ -61,12 +61,12 @@ class AudioRecorder:
                     silence_frames.append(audio_data)
                     if len(silence_frames) * 1024 / (self.sample_rate * self.channels) >= self.silence_duration:
                         print("Recording ended")
-                        print("End of speech detected...")
+                        print("End of speech detected before the maximum recording duration---------------SUCCESS")
                         break
 
             if len(self.frames) * 1024 / (self.sample_rate * self.channels) >= self.duration:
                 print("Maximum recording duration reached...")
-                print("I have to stop listening. Let me respond to what you've just asked")
+                print("Maximum recording duration reached..................................................SUCCESS")
                 break
 
         print("Recording completed.")
@@ -86,10 +86,9 @@ class AudioRecorder:
 
             audio_data = np.concatenate(self.frames)
             sf.write(output_file, audio_data, self.sample_rate, 'PCM_16')
-            print(f"Recorded audio saved as {output_file}")
+            print(f"Recorded audio saved as {output_file} ---------------------------SUCCESS")
             if start_time is not None:
                 elapsed_time = time.time() - start_time
-                print(f"Start time: {start_time}")
                 print(f"Elapsed time: {elapsed_time} seconds")
             
             return output_file
@@ -101,10 +100,9 @@ class AudioRecorder:
             reduced_output_file = "reduced_energy_audio.wav"
             reduced_audio_data = np.concatenate(silence_frames)
             sf.write(reduced_output_file, reduced_audio_data, self.sample_rate, 'PCM_16')
-            print(f"Reduced energy audio saved as {reduced_output_file}")
+            # print(f"Reduced energy audio saved as {reduced_output_file}")
             if silence_start_time is not None:
                 elapsed_time = time.time() - silence_start_time
-                print(f"Start silence time: {silence_start_time}")
                 print(f"Elapsed silence time: {elapsed_time} seconds")
         else:
             print("No frames with reduced energy.")
@@ -120,6 +118,7 @@ class AudioRecorder:
                 self.stream.close()
             if self.audio.open:
                 self.audio.terminate()
+            print("Recording Stopped--------------------------------------------------SUCCESS")
         except:
             print("There's error in stopping the audio")
 
