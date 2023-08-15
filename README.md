@@ -1,11 +1,5 @@
+
 # TIAGoGPT: Exploring the Potential of LLMs in Tiago Robot-Assisted Interventions for Supporting Children with Social Skill Difficulties 
-
-Name: Charles Anjah 
-UB No: 22002066 
-
-Module: Dissertation
-
-Supervisor: Dr. Amr Rashad Ahmed Abdullatif
 
 Date: July 2023
 
@@ -36,7 +30,8 @@ The project specific objectives are:
 7. Consent handling and managing Module
 8. Storage management Module
 
-## RELEASE v0.3.0: 
+
+## NEXT RELEASE v0.3.0:  - August 2023
 Milestone for the 3rd Month August 2023
 1. Incorporating face detection 
         a. to identify previous user
@@ -46,9 +41,7 @@ Milestone for the 3rd Month August 2023
 3. Log
 
 ## RELEASE v0.2.0: 12/08/2023
-
 From the Initial system design and the flowchart, we have the following section implemented in this version release:
-
 1. TiagoGPT starts conversation with greetings
 2. TiagoGPT greetings upgraded. Automatic conversation improved
 3. MVC implementation structured adopted and migration started
@@ -110,3 +103,4 @@ We appreciate the open source of the following projects:
 [Build Your Own ChatGPT Desktop App with Python](https://www.youtube.com/watch?v=snkys9zXyD0) &#8194;
 [MSRAbotChatSimulation](https://github.com/microsoft/LabanotationSuite/tree/master/MSRAbotChatSimulation) &#8194;
 [AudioGPT](https://github.com/AIGC-Audio/AudioGPT/blob/main/README.md) &#8194;
+
