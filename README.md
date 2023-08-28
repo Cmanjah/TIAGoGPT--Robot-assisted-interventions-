@@ -93,7 +93,7 @@ From the Initial system design and the flowchart, we have the following section 
          pip install -r Requirements.txt
 ```
 
-4. Edit the [openAI API file](handlers/includes/openai.ini) file with your openai api key
+4. Edit the [openAI API file](handlers/includes/api_key.ini) file with your openai api key
 5. Edit the [google cloud TTS file](handlers/includes/googlecloud-tts-api.json) file with your .json api obtained from GoogleCloud
 6. Run the TIAGoGPTAppLauncher.py file
 
@@ -116,7 +116,7 @@ source virt-env/bin/activate
 ```        
 pip3 install -r Requirements.txt
 ```
-4. Edit the [openAI API file](handlers/includes/openai.ini) file with your openai api key
+4. Edit the [openAI API file](handlers/includes/api_key.ini) file with your openai api key
 5. Edit the [google cloud TTS file](handlers/includes/googlecloud-tts-api.json) file with your .json api obtained from GoogleCloud
 6. Run the TIAGoGPTAppLauncher.py file
 
